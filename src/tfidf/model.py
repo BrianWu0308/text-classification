@@ -28,6 +28,7 @@ class TfidfConfig:
     stop_words: Optional[str] = "english"
 
     # classifier
+    
     # inverse of regularization strength (1/lambda);
     # smaller C -> stronger regularization
     C: float = 4.0
@@ -36,9 +37,9 @@ class TfidfConfig:
     random_state: int = 42
 
 
-def build_pipeline(cfg: TfidfConfig) -> Pipeline:
+def build_vectorizer(cfg: TfidfConfig) -> TfidfVectorizer:
     """
-    Build a scikit-learn Pipeline for TF-IDF vectorization and Logistic Regression classification.
+    Build a TfidfVectorizer based on the provided configuration.
     """
     vectorizer = TfidfVectorizer(
         lowercase=cfg.lowercase,
@@ -50,18 +51,28 @@ def build_pipeline(cfg: TfidfConfig) -> Pipeline:
         strip_accents=cfg.strip_accents,
         stop_words=cfg.stop_words,
     )
+    return vectorizer
 
+def build_classifier(cfg: TfidfConfig) -> LogisticRegression:
+    """
+    Build a LogisticRegression classifier based on the provided configuration.
+    """
     clf = LogisticRegression(
         C=cfg.C,
         max_iter=cfg.max_iter,
         n_jobs=cfg.n_jobs,
         random_state=cfg.random_state,
     )
+    return clf
 
+def build_pipeline(cfg: TfidfConfig) -> Pipeline:
+    """
+    Build a scikit-learn Pipeline for TF-IDF vectorization and Logistic Regression classification.
+    """
     pipe = Pipeline(
         steps=[
-            ("tfidf", vectorizer),
-            ("clf", clf),
+            ("tfidf", build_vectorizer(cfg)),
+            ("clf", build_classifier(cfg)),
         ]
     )
 

@@ -39,31 +39,38 @@ def predict(model, loader, device):
         logits = model(x)
         pred = logits.argmax(dim=1)
 
-        all_pred.append(pred.cpu().numpy())
-        all_true.append(y.cpu().numpy())
+        # move pred and true labels to CPU and store
+        all_pred.append(pred.cpu())
+        all_true.append(y.cpu())
 
-    y_pred = np.concatenate(all_pred)
-    y_true = np.concatenate(all_true)
+    y_pred = torch.cat(all_pred).numpy()
+    y_true = torch.cat(all_true).numpy()
     return y_true, y_pred
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device):
+    """
+    Train the model for one epoch and return the average loss.
+    """
     model.train()
     total_loss = 0.0
+    total_samples = 0
 
     for x, y in loader:
         x = x.to(device)
         y = y.to(device)
-
+        
+        # zero gradients, forward pass, compute loss, backward pass, and update weights
         optimizer.zero_grad()
         logits = model(x)
         loss = criterion(logits, y)
         loss.backward()
         optimizer.step()
 
-        total_loss += loss.item()
+        total_samples += x.size(0)
+        total_loss += loss.item() * x.size(0)
 
-    return total_loss / max(1, len(loader))
+    return total_loss / total_samples
 
 
 def main():
